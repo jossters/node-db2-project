@@ -1,36 +1,71 @@
 const Cars = require("./cars-model")
-// const db = require("../../data/db-config")
+const db = require("../../data/db-config")
+const vinValidator = require('vin-validator');
+
 
 async function checkCarId(req, res, next) {
-  const { id } = req.params;
+ const { id } = req.params;
  try{
- const cars= await Cars.getById(id);
- if (!cars) {
-   res.status(404).json({message: `car with id ${cars} is not found`})
+ const car = await Cars.getById(id);
+ if (!car) {
+   res.status(404).json()
  } else {
-   console.log(req.cars)
-   req.cars = cars
+   req.car = car
+   next()
  }
  } catch (err) {
    next (err);
  }
 }
 
-const checkCarPayload = (req, res, next) => {
-  // DO YOUR MAGIC
+function checkCarPayload(req, res, next) {
+  const {vin,make,model,mileage} = req.body;
+  if (vin === undefined ) {
+    res.status(400).json({ message: 'vin is missing'})
+  } else if (make === undefined) {
+    res.status(400).json({ message: 'make is missing'})
+  } else if (model === undefined) {
+    res.status(400).json({ message: 'model is missing'})
+  } else if (mileage === undefined) {
+    res.status(400).json({ message: 'mileage is missing'})
+  } else {
+    next();
+  }
 }
 
-const checkVinNumberValid = (req, res, next) => {
-  // DO YOUR MAGIC
+async function checkVinNumberValid(req, res, next) {
+  const vin = req.body.vin
+  try {
+ const isValidVin = vinValidator.validate(vin)
+if (!isValidVin) {
+  res.status(400).json({ message: `vin ${vin} is invalid` })
+} else {
+  req.isValidVin = isValidVin
+  next()
+}
+  }catch (err) {
+    next(err)
+  }
+  
 }
 
-const checkVinNumberUnique = (req, res, next) => {
-  // DO YOUR MAGIC
+async function checkVinNumberUnique(req, res, next) {
+  const vin = req.body.vin
+  try {
+    const vinUnique = await Cars.getByVin(vin)
+if (vinUnique) {
+ res.status(400).json({ message: `vin ${vin} already exists` })
+} else {
+  next()
+}
+  } catch (err){
+next(err)
+  }
 }
 
 module.exports = {
   checkCarId,
-  // checkCarPayload,
-  // checkVinNumberValid,
-  // checkVinNumberUnique,
+  checkCarPayload,
+  checkVinNumberValid,
+  checkVinNumberUnique,
 }

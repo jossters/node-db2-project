@@ -15,8 +15,13 @@ async function create({vin,make,model,mileage,title,transmission}) {
   return getById(id)
 }
 
+function getByVin(vin){
+  return db ('cars').where('vin',vin).first()
+}
+
 module.exports = {
   getAll,
   getById,
-  create
+  create,
+  getByVin
 }
